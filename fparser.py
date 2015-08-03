@@ -50,8 +50,8 @@ def parse_args(argv):
             help = "Enable debug message.")
 
     (opts, args) = parser.parse_args(argv)
-    logging.debug("opts : %s" % opts)
-    logging.debug("argv : %s" % argv)
+    print("opts : %s" % opts)
+    print("argv : %s" % argv)
 
     if None == opts.singlefile and None == opts.folder:
         print " Need help ?   --help or -h"
@@ -97,10 +97,11 @@ def singlefile_parse(filename):
 
 def main(argv):
     """Main function to run."""
-
+    
     os.environ["LANG"] = "en_US.UTF8"
     parser = optparse.OptionParser(version = VER)
     options = parse_args(argv)
+    utils.log_init(options.debug)
 
     if options.folder:
         if options.outfolder:
@@ -110,8 +111,6 @@ def main(argv):
 
     if options.singlefile:
         singlefile_parse(options.singlefile)
-
-    utils.log_init(options.debug)
 
 
 if __name__ == "__main__":
