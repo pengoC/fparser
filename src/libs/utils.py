@@ -10,15 +10,15 @@ import re
 import logging
 import string
 import operator
-import os
+import os,sys
 import myconf
-
+import time
 
 def log_init(debug = False):
     """Set up global logs."""
 
     log_format = "%(asctime)s %(process)s %(levelname)s [-] %(message)s"
-    log_filename = "parser.log"
+    log_filename = myconf.LOG_FILE_PATH + "parser_" + time.strftime('%Y%m%d%H%I%M%S',time.localtime(time.time())) + ".log"
     log_filemode = 'w'
     log_datefmt='%a, %d %b %Y %H:%M:%S'
     
@@ -26,7 +26,7 @@ def log_init(debug = False):
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
-
+    print("logloglogfile: %s" % log_filename)
     logging.basicConfig(format = log_format, level = log_level, datafmt = log_datefmt, filename = log_filename,filemode = log_filemode)
 
 
