@@ -22,6 +22,9 @@ Options:
 
   --outfolder=OUTFOLDER		
 			set folder for storing the csv files
-                        
+  
+  --log                 
+			Parse the rw-data-log files.  
+  
   -d, --debug           	
 			Enable debug message.

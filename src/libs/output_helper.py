@@ -11,6 +11,7 @@ import utils
 import csv
 import logging
 import myconf
+from libs.item import DataLogFile
 
 class OutputHelper(object):
     """Print fio report"""
@@ -67,6 +68,112 @@ class OutputHelper(object):
         return name_list
 
 
+
+
+    def output_batch_data_CSV(self,dataLogFile_list,CSV_path):
+        """Csv files Output."""
+
+        timeNum = self.getTimeAxis(dataLogFile_list)
+        parserType = utils.get_parse_type(CSV_path)
+        colNum = len(dataLogFile_list)
+        dataLines = []
+        fields = ["time"]
+
+        
+        statisticsMin = ["Min"]
+        statisticsMax = ["Max"]
+        statisticsAvg = ["Avg"]
+        statisticsVar = ["Var"]
+
+        if myconf.PARSE_TYPE["mix"] == parserType:
+            for i in range(1, timeNum):
+                line = []
+                line.append(i*5000)
+                for obj in dataLogFile_list:
+                    name = obj.get_fileName()
+                    if 0 == fields.count(os.path.basename(os.path.dirname(name)) + "-read"):
+                        fields.append(os.path.basename(os.path.dirname(name)) + "-read")
+                    if 0 == fields.count(os.path.basename(os.path.dirname(name)) + "-write"):
+                        fields.append(os.path.basename(os.path.dirname(name)) + "-write")
+                    line.append(obj.get_readBlock()[i])
+                    line.append(obj.get_writeBlock()[i])
+                dataLines.append(line)
+            
+            for obj in dataLogFile_list:
+                obj.init_statics(timeNum)
+                statisticsMin.append(obj.get_min_r())
+                statisticsMax.append(obj.get_max_r())
+                statisticsAvg.append(obj.get_avg_r())
+                statisticsVar.append(obj.get_var_r())
+
+                statisticsMin.append(obj.get_min_w())
+                statisticsMax.append(obj.get_max_w())
+                statisticsAvg.append(obj.get_avg_w())
+                statisticsVar.append(obj.get_var_w())            
+
+        if myconf.PARSE_TYPE["pure_r"] == parserType:
+            for i in range(1, timeNum):
+                line = []
+                line.append(i*5000)
+                for obj in dataLogFile_list:
+                    name = obj.get_fileName()
+                    if 0 == fields.count(os.path.basename(os.path.dirname(name)) + "-read"):
+                        fields.append(os.path.basename(os.path.dirname(name)) + "-read")                    
+                    line.append(obj.get_readBlock()[i])
+                dataLines.append(line)
+            for obj in dataLogFile_list:
+                obj.init_statics(timeNum)
+                statisticsMin.append(obj.get_min_r())
+                statisticsMax.append(obj.get_max_r())
+                statisticsAvg.append(obj.get_avg_r())
+                statisticsVar.append(obj.get_var_r())
+
+        if myconf.PARSE_TYPE["pure_w"] == parserType:
+            for i in range(1, timeNum):
+                line = []
+                line.append(i*5000)
+                for obj in dataLogFile_list:
+                    name = obj.get_fileName()
+                    if 0 == fields.count(os.path.basename(os.path.dirname(name)) + "-write"):
+                        fields.append(os.path.basename(os.path.dirname(name)) + "-write")
+                    line.append(obj.get_writeBlock()[i])
+                dataLines.append(line)
+            for obj in dataLogFile_list:
+                obj.init_statics(timeNum)   
+                statisticsMin.append(obj.get_min_w())
+                statisticsMax.append(obj.get_max_w())
+                statisticsAvg.append(obj.get_avg_w())
+                statisticsVar.append(obj.get_var_w())
+
+        #print(os.path.basename(CSV_path),parserType)
+        logging.debug("+ %s" % os.path.basename(CSV_path))
+        logging.debug("  %s" % parserType)
+
+        csvfile = file(CSV_path,'wb')
+        writer = csv.writer(csvfile)
+
+        #print(fields)
+        writer.writerow(fields)
+
+        for line in dataLines:
+            writer.writerow(line)
+
+        writer.writerow(statisticsMin)
+        writer.writerow(statisticsMax)
+        writer.writerow(statisticsAvg)
+        writer.writerow(statisticsVar)
+
+
+        if None == parserType:
+            print("@csv generated with warn@  " + CSV_path)
+            logging.debug("@csv generated with warn@   %s" % CSV_path)
+        else:
+            print("@csv generated successfully@  " + CSV_path)
+            logging.debug("@csv generated successfully@   %s" % CSV_path)
+
+        csvfile.close()
+
+
     def output_batch_CSV(self,logFile_list,CSV_path):
         """Csv files Output."""
         parse_type = utils.get_parse_type(os.path.basename(CSV_path))
@@ -115,11 +222,9 @@ class OutputHelper(object):
         if None == parse_type:
             print("@csv generated with warn@  " + CSV_path)
             logging.debug("@csv generated with warn@   %s" % CSV_path)
-            print("")
         else:
             print("@csv generated successfully@  " + CSV_path)
             logging.debug("@csv generated successfully@   %s" % CSV_path)
-            print("")
 
         csvfile.close()
 
@@ -174,3 +279,15 @@ class OutputHelper(object):
                     if key == field:
                         ioD_data.append(value)
         return ioD_data
+
+
+    def getTimeAxis(self,dataLogFile_list):
+        timeArea = len(dataLogFile_list[0].get_writeBlock())
+        for dataLogObj in dataLogFile_list:
+            listlen = len(dataLogObj.get_readBlock())
+            if listlen < timeArea:
+                timeArea = listlen
+            listlen = len(dataLogObj.get_readBlock())
+            if listlen < timeArea:
+                timeArea = listlen
+        return timeArea

@@ -12,7 +12,7 @@ import re
 import utils
 import string
 from libs.item import LogFile
-
+from libs.item import DataLogFile
 
 # Fields need to be parsed
 FIELDS = ["iops", "clat_avg", "lat_avg", "bandwidth"]
@@ -25,9 +25,62 @@ class FioFactory(object):
 
         pass
 
+    def data_log_file_maker(self,file_path):
+        """Most important parsing data-log logic.
+        1.cuting lines
+        2.tracing the lines in the log
+        3.generating the readBlock and writeBlock
+        4.generating DataLogFile object with its arributes
+        """
+        #print(file_path)
+        parseType = utils.get_parse_type(file_path)
+        lines = utils.cut_file(file_path)
+
+        newlines = []
+        for l in lines:
+            if '\n' != l and '' != l and None != l:
+                newlines.append(l)
+
+        #tailLine = ''
+        #i = 0
+        #while '' == tailLine:
+        #    i -= 1
+        #    tailLine = ''.join(lines[i].split())   
+        #tailLineItems = tailLine.split(",")
+        #num = int(round(int(tailLineItems[0])/5000.0)) + 1
+        num = len(newlines) + 1
+        readBlock = [0] * num
+        writeBlock = [0] * num
+        lastIndex = 1
+        for line in lines:
+            line = ''.join(line.split())
+            #print("###@ line:%s" % line)
+            if '' == line:
+                continue
+            lineItems = line.split(",")
+            index = int(round(int(lineItems[0])/5000.0))
+            
+            #Ensure the current - last == 1, set the repair to fix
+            repair = 500
+            while index - lastIndex > 1:
+                index = int(round((int(lineItems[0]) - repair)/5000.0))
+                repair += 500
+            lastIndex = index
+
+            if '0' == lineItems[2]:
+                if 0 == readBlock[index]:
+                    readBlock[index] = int(lineItems[1])
+            elif '1' == lineItems[2]:
+                if 0 == writeBlock[index]:
+                    writeBlock[index] = int(lineItems[1])
+
+        data_log_file = DataLogFile(file_path,parseType,readBlock,writeBlock)
+
+        return data_log_file
+
 
     def log_file_maker(self,file_path):
-        """Most important parsing logic.
+        """Most important parsing fio-log logic.
         1.cuting lines
         2.parsing string into several string blocks
         3.puting string blocks into a dic blocks

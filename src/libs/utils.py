@@ -26,7 +26,7 @@ def log_init(debug = False):
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
-    print("logloglogfile: %s" % log_filename)
+
     logging.basicConfig(format = log_format, level = log_level, datafmt = log_datefmt, filename = log_filename,filemode = log_filemode)
 
 

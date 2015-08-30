@@ -35,26 +35,30 @@ def parse_args(argv):
     parser = optparse.OptionParser(version = VER)
     parser.add_option('--singlefile', action = "store",
             dest = "singlefile",
-            help = "fio singlefile path")
+            help = "Fio singlefile path")
 
     parser.add_option('--folder', action = "store",
             dest = "folder",
-            help = "parse fio logs from folder recursively")
+            help = "Parse fio logs from folder recursively")
 
     parser.add_option('--outfolder', action = "store",
             dest = "outfolder",
-            help = "set folder for storing the csv files")
+            help = "Set folder for storing the csv files")
+
+    parser.add_option("--log", action = "store_true",
+            dest = "datalog", default = False,
+            help = "Parse the rw-data-log files.")
 
     parser.add_option("-d", "--debug", action = "store_true",
             dest = "debug", default = False,
             help = "Enable debug message.")
 
     (opts, args) = parser.parse_args(argv)
-    print("opts : %s" % opts)
-    print("argv : %s" % argv)
+    #print("opts : %s" % opts)
+    #print("argv : %s" % argv)
 
     if None == opts.singlefile and None == opts.folder:
-        print " Need help ?   --help or -h"
+        print "\n:) Need help ?  Please read the manual: --help or -h\n"
         sys.exit(1)
 
     if opts.singlefile and False == os.path.isfile(opts.singlefile):
@@ -66,27 +70,43 @@ def parse_args(argv):
     return opts
 
 
-def folder_parse(folder_path, output_path = '.'):
+def folder_parse(folder_path, output_path = '.',suffix = 'txt',workmode = 0):
+
     out_helper = OutputHelper()
-    suffix = myconf.TARGET_SUFFIX
     CSV_contain = out_helper.get_CSV_contain(folder_path,suffix)
-
     fio_factory = FioFactory()
-    CSV_logFileOBJ_contain = {}
-    for key, value in CSV_contain.items():
-        logging.debug("CSV-name: %s" % key)
-        logFile_list = []
-        for f_name in value:
-            logging.debug("  logfile: %s" % f_name)
-            # print(f_name)
-            logFileObj = fio_factory.log_file_maker(f_name)
-            logFile_list.append(logFileObj)
-        logFile_list.sort(cmp = None, key = lambda x:x.fileName, reverse = False)
+    if 0 == workmode:
+        CSV_logFileOBJ_contain = {}
+        for key, value in CSV_contain.items():
+            logging.debug("CSV-name: %s" % key)
+            logFile_list = []
+            for f_name in value:
+                logging.debug("  logFile: %s" % f_name)
+                # print(f_name)
+                logFileObj = fio_factory.log_file_maker(f_name)
+                logFile_list.append(logFileObj)
+            logFile_list.sort(cmp = None, key = lambda x:x.fileName, reverse = False)
+            CSV_logFileOBJ_contain[key] = logFile_list
+        for key,value in CSV_logFileOBJ_contain.items():
+            out_helper.output_batch_CSV(value, output_path + '/' + key +".csv")
 
-        CSV_logFileOBJ_contain[key] = logFile_list
-    
-    for key,value in CSV_logFileOBJ_contain.items():
-        out_helper.output_batch_CSV(value, output_path + '/' + key +".csv")
+    if 1 == workmode:
+        CSV_dataLogFileOBJ_contain = {}
+        for key, value in CSV_contain.items():
+            logging.debug("dataLog-CSV-name: %s" % key)
+            dataLogFile_list = []
+            for f_name in value:
+                logging.debug("  dataLogFile: %s" % f_name)
+                #print(f_name)
+                dataLogFileObj = fio_factory.data_log_file_maker(f_name)
+                dataLogFile_list.append(dataLogFileObj)
+            dataLogFile_list.sort(cmp = None, key = lambda x:x.fileName, reverse = False)
+            CSV_dataLogFileOBJ_contain[key] = dataLogFile_list
+
+        for key,value in CSV_dataLogFileOBJ_contain.items():
+            out_helper.output_batch_data_CSV(value, output_path + '/' + key +".csv")
+
+
 
 
 def singlefile_parse(filename):
@@ -103,11 +123,21 @@ def main(argv):
     options = parse_args(argv)
     utils.log_init(options.debug)
 
+    print("********************************************************************")
+    print("job scheduling ...\n")
+    suffix = myconf.TARGET_SUFFIX
     if options.folder:
         if options.outfolder:
-            folder_parse(options.folder, options.outfolder)
+            if options.datalog:
+                suffix = myconf.TARGET_DATALOG_SUFFIX
+                folder_parse(options.folder, options.outfolder,suffix,1)
+                print("\njob well done ! --- resultPath: %s" % options.outfolder)
+                return
+            folder_parse(options.folder, options.outfolder,suffix)
+            print("\njob well done ! --- resultPath: %s" % options.outfolder)
         else:
             folder_parse(options.folder)
+            print("\njob well done ! --- resultPath: Current foder")
 
     if options.singlefile:
         singlefile_parse(options.singlefile)
