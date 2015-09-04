@@ -51,7 +51,10 @@ class FioFactory(object):
         num = len(newlines) + 1
         readBlock = [0] * num
         writeBlock = [0] * num
-        lastIndex = 1
+
+        lastIndex_r = 1
+        lastIndex_w = 1
+
         for line in lines:
             line = ''.join(line.split())
             #print("###@ line:%s" % line)
@@ -62,17 +65,29 @@ class FioFactory(object):
             
             #Ensure the current - last == 1, set the repair to fix
             repair = 500
-            while index - lastIndex > 1:
-                index = int(round((int(lineItems[0]) - repair)/5000.0))
-                repair += 500
-            lastIndex = index
-
             if '0' == lineItems[2]:
+                while index - lastIndex_r > 1:
+                    index = int(round((int(lineItems[0]) - repair)/5000.0))
+                    repair += 500
+                lastIndex_r = index
                 if 0 == readBlock[index]:
                     readBlock[index] = int(lineItems[1])
-            elif '1' == lineItems[2]:
+
+
+            if '1' == lineItems[2]:
+                while index - lastIndex_w > 1:
+                    index = int(round((int(lineItems[0]) - repair)/5000.0))
+                    repair += 500
+                lastIndex_w = index
                 if 0 == writeBlock[index]:
                     writeBlock[index] = int(lineItems[1])
+
+            #if '0' == lineItems[2]:
+            #    if 0 == readBlock[index]:
+            #        readBlock[index] = int(lineItems[1])
+            #elif '1' == lineItems[2]:
+            #    if 0 == writeBlock[index]:
+            #        writeBlock[index] = int(lineItems[1])
 
         data_log_file = DataLogFile(file_path,parseType,readBlock,writeBlock)
 

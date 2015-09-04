@@ -282,12 +282,32 @@ class OutputHelper(object):
 
 
     def getTimeAxis(self,dataLogFile_list):
-        timeArea = len(dataLogFile_list[0].get_writeBlock())
-        for dataLogObj in dataLogFile_list:
-            listlen = len(dataLogObj.get_readBlock())
-            if listlen < timeArea:
-                timeArea = listlen
-            listlen = len(dataLogObj.get_readBlock())
-            if listlen < timeArea:
-                timeArea = listlen
-        return timeArea
+
+        parserT = utils.get_parse_type(dataLogFile_list[0].get_fileName())
+
+        if myconf.PARSE_TYPE["mix"] == parserT or myconf.PARSE_TYPE["pure_r"] == parserT:
+            timeArea = self.getNzeroLines(dataLogFile_list[0].get_readBlock())
+            for dataLogObj in dataLogFile_list:
+                listlen = self.getNzeroLines(dataLogObj.get_readBlock())
+                if listlen < timeArea:
+                    timeArea = listlen
+            return timeArea
+        elif myconf.PARSE_TYPE["pure_w"] == parserT:
+            timeArea = self.getNzeroLines(dataLogFile_list[0].get_writeBlock())
+            for dataLogObj in dataLogFile_list:
+                listlen = self.getNzeroLines(dataLogObj.get_writeBlock())
+                if listlen < timeArea:
+                    timeArea = listlen
+            return timeArea
+
+
+    def getNzeroLines(self,block):
+        #print("block[befor]=",block)
+        i = -1
+        while 0 == block[i]:
+            i -= 1
+        i += 1
+        if i<0 :
+            block = block[:i]
+        #print("block[after]=",block)
+        return len(block)
