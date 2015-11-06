@@ -5,6 +5,7 @@ VER = "FIO Parser 1.0.0"
 @ FIO Parser - fparser.py
 @ Author cqf
 @ Date 2015/7/28
+@ Update 2015/10/26 - cqf
 
 Implements the CLI API.
 For the scenes of pure-read/pure-write and mix-io.
@@ -20,6 +21,7 @@ from libs import utils
 from libs import myconf
 from libs.item import LogFile
 from libs.fio_analyzer import FioFactory
+from libs.statis import Statis
 from libs.output_helper import OutputHelper
 
 
@@ -35,37 +37,41 @@ def parse_args(argv):
     parser = optparse.OptionParser(version = VER)
     parser.add_option('--singlefile', action = "store",
             dest = "singlefile",
-            help = "Fio singlefile path")
+            help = "\n Fio singlefile path")
 
     parser.add_option('--folder', action = "store",
             dest = "folder",
-            help = "Parse fio logs from folder recursively")
+            help = "\n Give the workFolder and we get the files recursively")
 
     parser.add_option('--outfolder', action = "store",
             dest = "outfolder",
-            help = "Set folder for storing the csv files")
+            help = "\n Set folder for storing the csv files")
 
     parser.add_option("--log", action = "store_true",
             dest = "datalog", default = False,
-            help = "Parse the rw-data-log files.")
+            help = "\n Parse the rw-data-log files.")
+
+    parser.add_option("-s","--statistic", action = "store_true",
+            dest = "statistic", default = False,
+            help = "\n get the statistics from middle-files.")
 
     parser.add_option("-d", "--debug", action = "store_true",
             dest = "debug", default = False,
-            help = "Enable debug message.")
+            help = "\n Enable debug message.")
 
     (opts, args) = parser.parse_args(argv)
     #print("opts : %s" % opts)
     #print("argv : %s" % argv)
 
     if None == opts.singlefile and None == opts.folder:
-        print "\n:) Need help ?  Please read the manual: --help or -h\n"
+        print "\n :) Need help ?  Please read the manual: --help or -h\n"
         sys.exit(1)
 
     if opts.singlefile and False == os.path.isfile(opts.singlefile):
-        print "ERROR: are you sure this is a file ? : %s" % opts.singlefile
+        print "\n ERROR: are you sure this is a file ? : %s" % opts.singlefile
         sys.exit(1)
     if opts.folder and False == os.path.isdir(opts.folder):
-        print "ERROR: are you sure this is a folder ? : %s" % opts.folder
+        print "\n ERROR: are you sure this is a folder ? : %s" % opts.folder
         sys.exit(1)
     return opts
 
@@ -75,6 +81,7 @@ def folder_parse(folder_path, output_path = '.',suffix = 'txt',workmode = 0):
     out_helper = OutputHelper()
     CSV_contain = out_helper.get_CSV_contain(folder_path,suffix)
     fio_factory = FioFactory()
+    #fio parse mode
     if 0 == workmode:
         CSV_logFileOBJ_contain = {}
         for key, value in CSV_contain.items():
@@ -90,6 +97,7 @@ def folder_parse(folder_path, output_path = '.',suffix = 'txt',workmode = 0):
         for key,value in CSV_logFileOBJ_contain.items():
             out_helper.output_batch_CSV(value, output_path + '/' + key +".csv")
 
+    #datalog parse mode
     if 1 == workmode:
         CSV_dataLogFileOBJ_contain = {}
         for key, value in CSV_contain.items():
@@ -106,7 +114,14 @@ def folder_parse(folder_path, output_path = '.',suffix = 'txt',workmode = 0):
         for key,value in CSV_dataLogFileOBJ_contain.items():
             out_helper.output_batch_data_CSV(value, output_path + '/' + key +".csv")
 
-
+    #fio statistic mode
+    if 2 == workmode:
+        statis = Statis()
+        for key, value in CSV_contain.items():
+            logging.debug("statistic-CSV-name: %s" % key)
+            file_name = value[0]
+            file_stat = statis.get_statistic(file_name)
+            out_helper.output_statistic_CSV(file_stat,output_path + '/' + key +"-statistics.csv")
 
 
 def singlefile_parse(filename):
@@ -125,6 +140,14 @@ def main(argv):
 
     print("********************************************************************")
     print("job scheduling ...\n")
+
+
+    if options.statistic:
+        suffix = "csv"
+        folder_parse(options.folder, options.outfolder,suffix,2)
+        print("\njob well done ! --- resultPath: %s" % options.outfolder)
+        return      
+
     suffix = myconf.TARGET_SUFFIX
     if options.folder:
         if options.outfolder:

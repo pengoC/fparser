@@ -229,6 +229,64 @@ class OutputHelper(object):
         csvfile.close()
 
 
+    def output_statistic_CSV(self,file_stat,CSV_path):
+        """Csv files Output."""
+        parse_type = utils.get_parse_type(os.path.basename(CSV_path))
+        print("")
+        print(os.path.basename(CSV_path),parse_type)
+        logging.debug("+ %s" % os.path.basename(CSV_path))
+        logging.debug("  %s" % parse_type)
+
+        read_datas = []
+        write_datas = []
+        ioD_datas = []
+
+
+        csvfile = file(CSV_path,'wb')
+        writer = csv.writer(csvfile)
+        for block_name, blockData_dic in file_stat.items():
+            if 'read_block_str' == block_name:
+                writer.writerow(myconf.FIELDS_READ)
+                for name,data in blockData_dic.items():
+                    line = []
+                    line.append(name)
+                    line.extend(data)
+                    read_datas.append(tuple(line))
+                writer.writerows(read_datas)
+                writer.writerow("")
+
+            if 'write_block_str' == block_name:
+                writer.writerow(myconf.FIELDS_WRITE)
+                for name,data in blockData_dic.items():
+                    line = []
+                    line.append(name)
+                    line.extend(data)
+                    write_datas.append(tuple(line))
+                writer.writerows(write_datas)
+                writer.writerow("")
+
+            if 'ioDistrbution_block_str' == block_name:
+                writer.writerow(myconf.FIELDS_ioD)
+                for name,data in blockData_dic.items():
+                    line = []
+                    line.append(name)
+                    line.extend(data)
+                    ioD_datas.append(tuple(line))
+                writer.writerows(ioD_datas)
+                writer.writerow("")
+
+        if None == parse_type:
+            print("@csv generated with warn@  " + CSV_path)
+            logging.debug("@csv generated with warn@   %s" % CSV_path)
+        else:
+            print("@csv generated successfully@  " + CSV_path)
+            logging.debug("@csv generated successfully@   %s" % CSV_path)
+
+        csvfile.close()
+
+
+
+
     def get_readField_data(self,logFileObj):
         read_data = []
         if logFileObj.readBlock:
