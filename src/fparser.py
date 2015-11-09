@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-VER = "FIO Parser 1.0.0"
+VER = "FIO Parser 1.2.0"
 """
 @ FIO Parser - fparser.py
 @ Author cqf
 @ Date 2015/7/28
+
+@ Update 2015/9/14 - cqf
 @ Update 2015/10/26 - cqf
+@ Update 2015/11/6 - cqf
 
 Implements the CLI API.
 For the scenes of pure-read/pure-write and mix-io.
@@ -39,9 +42,9 @@ def parse_args(argv):
             dest = "singlefile",
             help = "\n Fio singlefile path")
 
-    parser.add_option('--folder', action = "store",
-            dest = "folder",
-            help = "\n Give the workFolder and we get the files recursively")
+    parser.add_option('--infolder', action = "store",
+            dest = "infolder",
+            help = "\n Give the InputFolder and we get the files recursively")
 
     parser.add_option('--outfolder', action = "store",
             dest = "outfolder",
