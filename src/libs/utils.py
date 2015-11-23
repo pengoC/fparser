@@ -61,3 +61,15 @@ def cut_file(filePath):
     with open(filePath) as f:
         lines = f.read().split("\n")
         return lines
+
+def power_check(code):
+    if not code:
+        return False
+    import hashlib   
+    md = hashlib.md5()   
+    md.update(code)
+    md2 = hashlib.md5()
+    md2.update(md.hexdigest())      
+    if 'c552c2ee96cfc74ad67bfefbd547031d' == md2.hexdigest():
+        return True
+    return False

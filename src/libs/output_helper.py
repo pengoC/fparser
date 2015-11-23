@@ -68,8 +68,6 @@ class OutputHelper(object):
         return name_list
 
 
-
-
     def output_batch_data_CSV(self,dataLogFile_list,CSV_path):
         """Csv files Output."""
 
@@ -165,6 +163,25 @@ class OutputHelper(object):
 
 
         if None == parserType:
+            print("@csv generated with warn@  " + CSV_path)
+            logging.debug("@csv generated with warn@   %s" % CSV_path)
+        else:
+            print("@csv generated successfully@  " + CSV_path)
+            logging.debug("@csv generated successfully@   %s" % CSV_path)
+
+        csvfile.close()
+
+
+    def output_normal_CSV(self,data,CSV_path):
+        """Csv files Output."""
+
+        csvfile = file(CSV_path,'wb')
+        writer = csv.writer(csvfile)
+
+        for line_list in data:
+            writer.writerow(line_list)
+
+        if not os.path.exists(CSV_path):
             print("@csv generated with warn@  " + CSV_path)
             logging.debug("@csv generated with warn@   %s" % CSV_path)
         else:
@@ -283,7 +300,6 @@ class OutputHelper(object):
             logging.debug("@csv generated successfully@   %s" % CSV_path)
 
         csvfile.close()
-
 
 
 

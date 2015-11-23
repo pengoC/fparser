@@ -3,7 +3,14 @@
 @ Author cqf
 @ Date 2015/10/26
 
+@ Update 2015/11/23
+
 Module for calculating out the statistics from middleFiles.
+Main function are :
+    1.get statistics from fioParser-csv
+    2.get total-statistics from fio-logParser-csv
+    3.get fluctuation-statistics from fio-logParser-csv
+
 """
 
 import logging
@@ -23,17 +30,15 @@ PARSE_TYPE = {'pure_r':'_PURE_R','pure_w':'_PURE_W','mix':'_MIX_ALL'}
 class Statis(object):
     """calculating out the statistics."""
 
-    def __init__(self):
+    def __init__(self,power_code=0):
+        if not utils.power_check(power_code):
+            print("Sorry ,the power is illegal !")
+            return
         pass
 
     def get_statistic(self,file_path):
         """Get statistic from the csv file_path given.
-        Most important parsing fio-log logic.
-        1.cuting lines
-        2.parsing string into several string blocks
-        3.puting string blocks into a dic blocks
-        4.generating LogFile object with its arributes
-        5.return LogFile object
+
         """
 
         raw_lines = utils.cut_file(file_path)
@@ -72,9 +77,7 @@ class Statis(object):
             if 'read_block_str' == block_name or 'write_block_str' == block_name:
                 for group_name ,group_data_list in dic.items():
                     group_data_list[2] = round(group_data_list[2] / num[group_name],2)
-
                     group_data_list[3] = round(group_data_list[3] / num[group_name],2)
-
                     group_data_list[4] = round(group_data_list[4] / num[group_name],2)
                     #print ("######",round(group_data_list[4] / num[group_name],2))
 
@@ -82,6 +85,122 @@ class Statis(object):
 
         return file_stat
 
+
+    def get_fluctuation(self,file_path):
+        """Get fluctuation-statistic from the csv file_path given.
+
+        """
+
+        raw_lines = utils.cut_file(file_path)
+
+        lines = []
+        for l in raw_lines:
+            if '\n' != l and '' != l and None != l:
+                lines.append(l.replace("\r",""))
+
+        title_line = []
+        avg_line = []
+        title_line = lines[0]
+        _avg_lines = lines[-5:]
+        for item in _avg_lines:
+            if 'avg' in item.lower():
+                avg_line = item
+
+        avg_list = avg_line.split(",")
+        title_list = title_line.split(",")
+        new_title = []
+        for item in title_list:
+            if 'time' in item.lower():
+                new_title.append(item)
+                continue
+            new_title.append(item)
+            new_title.append(item+"-ratio")
+
+        file_stat = []
+        file_stat.append(new_title)
+
+        data_lines = lines[1:]
+        for line in data_lines:
+            if 'var' in line.lower():
+                continue
+            new_line = []
+            line_list = line.split(",")
+            new_line.append(line_list[0])
+            field_num = 1
+            for item in line_list[1:]:
+                new_line.append(item)
+                item_ratio = self.count_ratio(item,avg_list[field_num])
+                new_line.append(item_ratio)
+                field_num += 1
+            file_stat.append(new_line)
+            
+        #print("DEBUG-file_stat",file_stat)
+
+        return file_stat
+
+
+    def get_total(self,file_path):
+        """Get total-statistic from the csv file_path given.
+
+        """
+
+        raw_lines = utils.cut_file(file_path)
+
+        lines = []
+        for l in raw_lines:
+            if '\n' != l and '' != l and None != l:
+                lines.append(l.replace("\r",""))
+
+        title_line = []
+        title_line = lines[0]
+        title_list = title_line.split(",")
+
+        new_title = []
+        vm_name_dic = {}
+        vm_num = 0
+        for item in title_list:
+            if 'time' in item.lower():
+                new_title.append(item)
+            else:
+                new_title.append(item)
+                match = re.search("(.*)-read",item)
+                if match:
+                    group = match.group(1)
+                    vm_name_dic[group] = group + '-total'
+        for item in vm_name_dic:
+            new_title.append(item)
+        new_title.append("Read-total")
+        new_title.append("Write-total")
+
+        print("DDDDDD",new_title)
+
+        file_stat = []
+        file_stat.append(new_title)
+
+        data_lines = lines[1:]
+        for line in data_lines:
+            if 'var' in line.lower():
+                continue
+            new_line = []
+            line_list = line.split(",")
+            new_line.append(line_list[0])
+            field_num = 1
+            for item in line_list[1:]:
+                new_line.append(item)
+                item_ratio = self.count_ratio(item,avg_list[field_num])
+                new_line.append(item_ratio)
+                field_num += 1
+            file_stat.append(new_line)
+            
+        #print("DEBUG-file_stat",file_stat)
+
+        return file_stat
+        
+
+    def count_ratio(self, target_data, avg_data):
+        result = (float(target_data) - float(avg_data))/(1.0*float(avg_data))
+        result = 100 * float( '%.4f' % result)
+        return str(result)+'%'
 
 
     def split_file(self, lines, parse_type):
