@@ -26,20 +26,25 @@ FIELDS = ["iops", "clat_avg", "lat_avg", "bandwidth"]
 PARSE_TYPE = {'pure_r':'_PURE_R','pure_w':'_PURE_W','mix':'_MIX_ALL'}
 
 
-
 class Statis(object):
     """calculating out the statistics."""
 
     def __init__(self,power_code=0):
         if not utils.power_check(power_code):
             print("Sorry ,the power is illegal !")
-            return
-        pass
+            self.prohibition = True
+        else:
+            self.prohibition = False
+
 
     def get_statistic(self,file_path):
         """Get statistic from the csv file_path given.
 
         """
+
+        if self.prohibition == True:
+            print("Sorry ,the power is illegal !")
+            return 
 
         raw_lines = utils.cut_file(file_path)
 
@@ -90,6 +95,10 @@ class Statis(object):
         """Get fluctuation-statistic from the csv file_path given.
 
         """
+
+        if self.prohibition == True:
+            print("Sorry ,the power is illegal !")
+            return 
 
         raw_lines = utils.cut_file(file_path)
 
@@ -144,6 +153,10 @@ class Statis(object):
 
         """
 
+        if self.prohibition == True:
+            print("Sorry ,the power is illegal !")
+            return 
+
         raw_lines = utils.cut_file(file_path)
 
         lines = []
@@ -157,7 +170,6 @@ class Statis(object):
 
         new_title = []
         vm_name_dic = {}
-        vm_num = 0
         for item in title_list:
             if 'time' in item.lower():
                 new_title.append(item)
@@ -167,12 +179,12 @@ class Statis(object):
                 if match:
                     group = match.group(1)
                     vm_name_dic[group] = group + '-total'
-        for item in vm_name_dic:
-            new_title.append(item)
+        
+        for key in sorted(vm_name_dic.keys()):
+            new_title.append(vm_name_dic[key])
         new_title.append("Read-total")
         new_title.append("Write-total")
-
-        print("DDDDDD",new_title)
+        vm_num = len(vm_name_dic)
 
         file_stat = []
         file_stat.append(new_title)
@@ -182,17 +194,30 @@ class Statis(object):
             if 'var' in line.lower():
                 continue
             new_line = []
+            vm_each_total_dic = {}
+            line_total = 0
+            line_write_total = 0
+            line_read_total = 0
+
             line_list = line.split(",")
-            new_line.append(line_list[0])
+            #new_line.append(line_list[0])
+            new_line = line_list
             field_num = 1
-            for item in line_list[1:]:
-                new_line.append(item)
-                item_ratio = self.count_ratio(item,avg_list[field_num])
-                new_line.append(item_ratio)
-                field_num += 1
+
+            for i in range(1,vm_num+1):
+                vm_each_total_dic[i] = float(line_list[2*i-1]) + float(line_list[2*i])
+            for i in range(1,vm_num*2+1):
+                line_total += float(line_list[i])
+                if 0 == i % 2:
+                    line_write_total += float(line_list[i])
+            line_read_total = line_total - line_write_total
+
+            for key in sorted(vm_each_total_dic.keys()):
+                new_line.append(vm_each_total_dic[key]) 
+            new_line.append(line_read_total)
+            new_line.append(line_write_total)
+
             file_stat.append(new_line)
-            
-        #print("DEBUG-file_stat",file_stat)
 
         return file_stat
         
@@ -228,8 +253,6 @@ class Statis(object):
             if self._is_ioDistrbution(lines[index]):
                 ioDistrbution_line = index
                 break
-
-
         
         if myconf.PARSE_TYPE["mix"] == parse_type :
             read_block_str = lines[read_line + 1:write_line]
@@ -255,7 +278,6 @@ class Statis(object):
         return file_blocks_str
 
 
-
     def _is_read(self, line):
         """Return true if read start.
 
@@ -263,6 +285,7 @@ class Statis(object):
         """
         if re.match(".*PureRead,", line):
             return True
+
 
     def _is_write(self, line):
         """Return true if write start.
@@ -272,6 +295,7 @@ class Statis(object):
         if re.match(".*PureWrite,", line):
             return True
 
+
     def _is_latence(self, line):
         """Return true if lat start.
 
@@ -279,6 +303,7 @@ class Statis(object):
         """
         if re.match(".*Latence,", line):
             return True
+
 
     def _is_ioDistrbution(self, line):
         """Return true if ioDistrbution start.

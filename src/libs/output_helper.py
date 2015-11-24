@@ -175,6 +175,9 @@ class OutputHelper(object):
     def output_normal_CSV(self,data,CSV_path):
         """Csv files Output."""
 
+        if not data:
+            return
+
         csvfile = file(CSV_path,'wb')
         writer = csv.writer(csvfile)
 
@@ -246,8 +249,11 @@ class OutputHelper(object):
         csvfile.close()
 
 
-    def output_statistic_CSV(self,file_stat,CSV_path):
+    def output_statistic_CSV(self,data,CSV_path):
         """Csv files Output."""
+        if not data:
+            return 
+
         parse_type = utils.get_parse_type(os.path.basename(CSV_path))
         print("")
         print(os.path.basename(CSV_path),parse_type)
@@ -261,7 +267,7 @@ class OutputHelper(object):
 
         csvfile = file(CSV_path,'wb')
         writer = csv.writer(csvfile)
-        for block_name, blockData_dic in file_stat.items():
+        for block_name, blockData_dic in data.items():
             if 'read_block_str' == block_name:
                 writer.writerow(myconf.FIELDS_READ)
                 for name,data in blockData_dic.items():

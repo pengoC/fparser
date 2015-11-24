@@ -33,7 +33,6 @@ if os.path.exists(os.path.join(possible_topdir, "lib", "__init__.py")):
     sys.path.insert(0, os.path.join(possible_topdir))
 
 
-
 def parse_args(argv):
     """Parses command-line arguments."""
 
